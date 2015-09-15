@@ -17,41 +17,17 @@ struct {
 } app_data;
 
 //Callback function for Arbiter
-int arbiter_send(arbiter_client_t *uclient, arbiter_request_t *req) {
+static int arbiter_send(arbiter_client_t *uclient, arbiter_request_t *req) {
 	return arbiter_client_send(uclient, req);
 }
 
-void * auto_send_to_arbiter(void * arg) {
-    arbiter_request_t req;
+//Auto send msg to arbiter
+static void *auto_send_to_arbiter(void * arg);
 
-    arbiter_client_t *aclient = (arbiter_client_t *) arg;
-    
-    req.msg_id = ABT_UP;
-    strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
-    strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
-    req.abt_up.n_ports = 4;
-    req.abt_up.code = 1;
-    while (1) {
-        arbiter_send(aclient, &req);
-        sleep(5);
-    }
-}
-void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
-    fprintf(stdout, "RIUC4 port %d, update signal %s. Status: tx=%d,rx=%d,ptt=%d,sq=%d\n", port, RIUC4_SIGNAL_NAME[signal], ustatus->tx, ustatus->rx, ustatus->ptt, ustatus->sq);
-
-    if (signal == RIUC_SIGNAL_SQ) {
-        oiu_client_t *oclient = (oiu_client_t *)ustatus->user_data;
-
-        oiu_request_t req;
-        req.msg_id = OIUC_SQ;
-        strncpy(req.oiuc_sq._id, "RIUC1", sizeof(req.oiuc_sq._id));
-        req.oiuc_sq.port = port;
-        strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4321", sizeof(req.oiuc_sq.multicast_addr));
-        oiu_client_send(oclient, &req);
-    }    
-}
-
+//Receive msg from OIUC
 static void on_request(riu_server_t *rserver, riu_request_t *req);
+
+void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus);
 
 int main(int argc, char *argv[]) {
     char temp[10];
@@ -114,11 +90,11 @@ int main(int argc, char *argv[]) {
 #endif
 
     pthread_create(&thread, NULL, auto_send_to_arbiter, &app_data.aclient);
-
     
     while(!fEnd) {
         fprintf(stdout, "COMMAND:<port[1-4]><command[DdEertsl+-q]>:\n");
-        fgets(temp, sizeof(temp), stdin);
+        if (fgets(temp, sizeof(temp), stdin) == NULL)
+            printf("NULL CMD\n");
         port_idx = temp[0] - '1';
         if( port_idx < 0 || port_idx > 3 ) {
             fprintf(stdout, "Command error\n");
@@ -210,7 +186,7 @@ static void on_request(riu_server_t *rserver, riu_request_t *req) {
             riuc4_on_ptt(riuc4, port_idx);
             break;
         case '-':
-            riuc4_off_ptt(&riuc4, port_idx);
+            riuc4_off_ptt(riuc4, port_idx);
             break;
         case 'q':
             break;
@@ -218,5 +194,37 @@ static void on_request(riu_server_t *rserver, riu_request_t *req) {
             fprintf(stdout, "Unknown command\n");
             break;
     }
+}
+
+void *auto_send_to_arbiter(void * arg) {
+    arbiter_request_t req;
+
+    arbiter_client_t *aclient = (arbiter_client_t *) arg;
+    
+    req.msg_id = ABT_UP;
+    strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
+    strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
+    req.abt_up.n_ports = 4;
+    req.abt_up.code = 1;// Unused ?
+
+    while (1) {
+        arbiter_send(aclient, &req);
+        sleep(5);
+    }
+}
+
+void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
+    fprintf(stdout, "RIUC4 port %d, update signal %s. Status: tx=%d,rx=%d,ptt=%d,sq=%d\n", port, RIUC4_SIGNAL_NAME[signal], ustatus->tx, ustatus->rx, ustatus->ptt, ustatus->sq);
+
+    if (0 == strcmp(RIUC4_SIGNAL_NAME[signal], "SQ")) {
+        oiu_client_t *oclient = (oiu_client_t *)ustatus->user_data;
+
+        oiu_request_t req;
+        req.msg_id = OIUC_SQ;
+        strncpy(req.oiuc_sq._id, "RIUC1", sizeof(req.oiuc_sq._id));
+        req.oiuc_sq.port = port;
+        strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4321", sizeof(req.oiuc_sq.multicast_addr));
+        oiu_client_send(oclient, &req);
+    }    
 }
 
