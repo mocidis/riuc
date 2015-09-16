@@ -225,7 +225,7 @@ void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
         req.msg_id = OIUC_SQ;
         strncpy(req.oiuc_sq._id, "RIUC1", sizeof(req.oiuc_sq._id));
         req.oiuc_sq.port = port;
-        switch (port): {
+        switch (port) {
             case 0:
                 strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4320", sizeof(req.oiuc_sq.multicast_addr));
                 break;
