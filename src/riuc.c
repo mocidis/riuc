@@ -225,8 +225,24 @@ void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
         req.msg_id = OIUC_SQ;
         strncpy(req.oiuc_sq._id, "RIUC1", sizeof(req.oiuc_sq._id));
         req.oiuc_sq.port = port;
-        strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4321", sizeof(req.oiuc_sq.multicast_addr));
+        switch (port): {
+            case 0:
+                strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4320", sizeof(req.oiuc_sq.multicast_addr));
+                break;
+            case 1:
+                strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4321", sizeof(req.oiuc_sq.multicast_addr));
+                break; 
+            case 2:
+                strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4322", sizeof(req.oiuc_sq.multicast_addr));
+                break;
+            case 3:
+                strncpy(req.oiuc_sq.multicast_addr,"udp:129.0.0.1:4323", sizeof(req.oiuc_sq.multicast_addr));
+                break;
+            default:
+                printf("Unknow port number.\n");
+                break;
+        }
         oiu_client_send(oclient, &req);
-    }    
-}
+        }    
+    }
 
