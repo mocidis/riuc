@@ -64,6 +64,10 @@ int main(int argc, char *argv[]) {
 
     //Arbiter path
     // LISTEN
+    app_data.rserver.user_data = &riuc4;
+
+    app_data.rserver.on_request_f = &on_request;
+
     riu_server_init(&app_data.rserver, argv[3]);
     riu_server_start(&app_data.rserver);
 
