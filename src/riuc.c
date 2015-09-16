@@ -204,8 +204,10 @@ void *auto_send_to_arbiter(void * arg) {
     req.msg_id = ABT_UP;
     strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
     strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
+    strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
+    req.abt_up.frequence = 96.5;
     req.abt_up.n_ports = 4;
-    req.abt_up.code = 1;// Unused ?
+    req.abt_up.is_online = 1;
 
     while (1) {
         arbiter_send(aclient, &req);
