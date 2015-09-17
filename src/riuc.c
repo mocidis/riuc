@@ -209,8 +209,11 @@ void *auto_send_to_arbiter(void * arg) {
     strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
     strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
     strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
+    
+    // 
+
+    strncpy(req.abt_up.ports_status,"{1-1-1, 2-1-0, 3-0-0, 4-0-0}", sizeof(req.abt_up.ports_status));
     req.abt_up.frequence = 96.5;
-    req.abt_up.n_ports = 4;
     req.abt_up.is_online = 1;
 
     while (1) {
