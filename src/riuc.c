@@ -9,12 +9,15 @@
 #include "oiu-client.h"
 #include "riu-server.h"
 
-struct {
+typedef struct {
     ics_t ics_data;
     arbiter_client_t aclient;
     oiu_client_t oclient;
     riu_server_t rserver;
-} app_data;
+    char ports_status[100];
+} app_data_t;
+
+app_data_t app_data;
 
 //Callback function for Arbiter
 static int arbiter_send(arbiter_client_t *uclient, arbiter_request_t *req) {
@@ -39,6 +42,8 @@ int main(int argc, char *argv[]) {
 
     serial_t serial;
     riuc4_t riuc4;
+
+    strcpy(app_data.ports_status, "{1-0-0, 2-0-0, 3-0-0, 4-0-0}");
 
     if (argc < 2) {
         fprintf(stdout, "Usage: myapp-riuc4 <device> <request connect string> <listen connection string>\n");
@@ -96,6 +101,7 @@ int main(int argc, char *argv[]) {
     pthread_create(&thread, NULL, auto_send_to_arbiter, &app_data.aclient);
     
     while(!fEnd) {
+        printf("main = %s\n", app_data.ports_status);
         fprintf(stdout, "COMMAND:<port[1-4]><command[DdEertsl+-q]>:\n");
         if (fgets(temp, sizeof(temp), stdin) == NULL)
             printf("NULL CMD\n");
@@ -156,6 +162,7 @@ static void on_request(riu_server_t *rserver, riu_request_t *req) {
     char temp[10];
     strncpy(temp,req->riuc_ptt.msg, sizeof(temp));
 
+    strcpy(app_data.ports_status,"123123");
     port_idx = temp[0] - '1';
 
     if( port_idx < 0 || port_idx > 3 ) {
@@ -212,11 +219,11 @@ void *auto_send_to_arbiter(void * arg) {
     
     // 
 
-    strncpy(req.abt_up.ports_status,"{1-1-1, 2-1-0, 3-0-0, 4-0-0}", sizeof(req.abt_up.ports_status));
     req.abt_up.frequence = 96.5;
     req.abt_up.is_online = 1;
 
     while (1) {
+        strncpy(req.abt_up.ports_status,app_data.ports_status, sizeof(req.abt_up.ports_status));
         arbiter_send(aclient, &req);
         sleep(5);
     }
@@ -224,6 +231,40 @@ void *auto_send_to_arbiter(void * arg) {
 
 void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
     fprintf(stdout, "RIUC4 port %d, update signal %s. Status: tx=%d,rx=%d,ptt=%d,sq=%d\n", port, RIUC4_SIGNAL_NAME[signal], ustatus->tx, ustatus->rx, ustatus->ptt, ustatus->sq);
+
+    switch(port) {
+        case 0:
+            app_data.ports_status[3] = '1';
+            if (ustatus->tx == 1)
+                app_data.ports_status[5] = '1';
+            if (ustatus->tx == 0)
+                app_data.ports_status[5] = '0';
+            break;
+        case 1:
+            app_data.ports_status[10] = '1';
+            if (ustatus->tx == 1)
+                app_data.ports_status[12] = '1';
+            if (ustatus->tx == 0)
+                app_data.ports_status[12] = '0';
+            break;
+        case 2:
+            app_data.ports_status[17] = '1';
+            if (ustatus->tx == 1)
+                app_data.ports_status[19] = '1';
+            if (ustatus->tx == 0)
+                app_data.ports_status[19] = '0';
+            break;
+        case 3:
+            app_data.ports_status[24] = '1';
+            if (ustatus->tx == 1)
+                app_data.ports_status[26] = '1';
+            if (ustatus->tx == 0)
+                app_data.ports_status[26] = '0';
+            break;
+        default:
+            printf("Unknown port.\n");
+            break;
+    }
 
     if (0 == strcmp(RIUC4_SIGNAL_NAME[signal], "SQ")) {
         oiu_client_t *oclient = (oiu_client_t *)ustatus->user_data;
