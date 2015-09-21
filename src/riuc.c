@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
 
     riuc4_start(&serial, argv[1]);
 
-#if 0
     //SEND
     char sqa_mip[50] = "udp:239.0.0.1:12345";
  
@@ -77,26 +76,7 @@ int main(int argc, char *argv[]) {
     riu_server_start(&app_data.rserver);
 
     //End Arbiter path
-#endif
 
-#if 1
-   //SEND
-    char sqa_mip[] = "udp:239.0.0.1:1234";
-    char send_a[] = "udp:127.0.0.1:4321";
-    char recv[] = "udp:0.0.0.0:11111";
-    arbiter_client_open(&app_data.aclient, send_a);
-    oiu_client_open(&app_data.oclient, sqa_mip);
-
-    //Arbiter path
-    // LISTEN
-    app_data.rserver.user_data = &riuc4;
-
-    app_data.rserver.on_request_f = &on_request;
-    riu_server_init(&app_data.rserver, recv);
-    riu_server_start(&app_data.rserver);
-
-    //End Arbiter path
-#endif
 
     pthread_create(&thread, NULL, auto_send_to_arbiter, &app_data.aclient);
     
