@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
    //SEND
     char sqa_mip[] = "udp:239.0.0.1:1234";
     char send_a[] = "udp:127.0.0.1:4321";
-    char recv[] = "udp:0.0.0.0:12345";
+    char recv[] = "udp:0.0.0.0:11111";
     arbiter_client_open(&app_data.aclient, send_a);
     oiu_client_open(&app_data.oclient, sqa_mip);
 
@@ -160,9 +160,8 @@ static void on_request(riu_server_t *rserver, riu_request_t *req) {
     riuc4_t *riuc4 = (riuc4_t *)rserver->user_data;
     int port_idx;
     char temp[10];
-    strncpy(temp,req->riuc_ptt.msg, sizeof(temp));
+    strncpy(temp,req->riuc_ptt.cmd, sizeof(temp));
 
-    strcpy(app_data.ports_status,"123123");
     port_idx = temp[0] - '1';
 
     if( port_idx < 0 || port_idx > 3 ) {
