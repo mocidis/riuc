@@ -195,6 +195,9 @@ void *auto_send_to_arbiter(void * arg) {
     strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
     strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
     strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
+    strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
+    strncpy(req.abt_up.des, "M16 Rifle", sizeof(req.abt_up.des));
+
     
     // 
 
