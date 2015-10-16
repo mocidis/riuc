@@ -10,7 +10,6 @@
 #include "riu-server.h"
 
 typedef struct {
-    ics_t ics_data;
     arbiter_client_t aclient;
     oiu_client_t oclient;
     riu_server_t rserver;
@@ -141,49 +140,7 @@ static void on_request(riu_server_t *rserver, riu_request_t *req) {
     int port_idx;
     char temp[10];
     strncpy(temp,req->riuc_ptt.cmd, sizeof(temp));
-
-    port_idx = temp[0] - '1';
-
-    if( port_idx < 0 || port_idx > 3 ) {
-        fprintf(stdout, "Command error\n");
-    }
-    switch (temp[1]) {
-        case 'D':
-            riuc4_disable_rx(riuc4, port_idx);
-            break;
-        case 'd':
-            riuc4_disable_tx(riuc4, port_idx);
-            break;
-        case 'E':
-            riuc4_enable_rx(riuc4, port_idx);
-            break;
-        case 'e':
-            riuc4_enable_tx(riuc4, port_idx);
-            break;
-        case 'r':
-            riuc4_probe_rx(riuc4, port_idx);
-            break;
-        case 't':
-            riuc4_probe_tx(riuc4, port_idx);
-            break;
-        case 's':
-            riuc4_probe_sq(riuc4, port_idx);
-            break;
-        case 'l':
-            riuc4_probe_ptt(riuc4, port_idx);
-            break;
-        case '+':
-            riuc4_on_ptt(riuc4, port_idx);
-            break;
-        case '-':
-            riuc4_off_ptt(riuc4, port_idx);
-            break;
-        case 'q':
-            break;
-        default:
-            fprintf(stdout, "Unknown command\n");
-            break;
-    }
+    printf("Do something here...\n");
 }
 
 void *auto_send_to_arbiter(void * arg) {
@@ -193,14 +150,11 @@ void *auto_send_to_arbiter(void * arg) {
     
     req.msg_id = ABT_UP;
     strncpy(req.abt_up.type, "RIU", sizeof(req.abt_up.type));
-    strncpy(req.abt_up.username, "RIUC1", sizeof(req.abt_up.username));
+    strncpy(req.abt_up.username, "R1", sizeof(req.abt_up.username));
     strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
     strncpy(req.abt_up.location, "HN", sizeof(req.abt_up.location));
     strncpy(req.abt_up.des, "M16 Rifle", sizeof(req.abt_up.des));
-
-    
-    // 
-
+    strncpy(req.abt_up.ip_addr, "127.0.0.1:1111", sizeof(req.abt_up.ip_addr));
     req.abt_up.frequence = 96.5;
     req.abt_up.is_online = 1;
 
