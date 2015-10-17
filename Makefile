@@ -29,7 +29,7 @@ ARBITER_DIR:=../arbiter
 SERIAL_DIR := ../serial
 SERIAL_SRCS := riuc4_uart.c serial_utils.c
 
-CFLAGS:=-std=c99 $(shell pkg-config --cflags libpjproject)
+CFLAGS:=-std=c99 -fms-extensions $(shell pkg-config --cflags libpjproject)
 CFLAGS+=-I$(ICS_DIR)/include -I$(Q_DIR)/include -I$(O_DIR)/include
 CFLAGS+=-I$(C_DIR)/include -I$(USERVER_DIR)/include
 CFLAGS+= -I../json-c/output/include/json-c
