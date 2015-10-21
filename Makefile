@@ -1,16 +1,17 @@
 .PHONY: all clean test doc
 
-APP:=riuc
-TESTS:=riuc.c
+APP:=riuc-app
+TESTS:=$(APP).c
 
 DIR:=.
 PROTOCOLS_DIR:=../protocols
+#STREAM_R_SRCS:=riuc.c
 
 ICS_DIR:=../ics
 ICS_SRCS:=ics.c ics-event.c ics-command.c
 
 C_DIR:=../common
-C_SRCS:=ansi-utils.c
+C_SRCS:=ansi-utils.c my-pjlib-utils.c
 
 GEN_DIR:=./gen
 GEN_C_SRCS:=arbiter-client.c
@@ -32,10 +33,11 @@ SERIAL_SRCS := riuc4_uart.c serial_utils.c
 CFLAGS:=-std=c99 -fms-extensions $(shell pkg-config --cflags libpjproject)
 CFLAGS+=-I$(ICS_DIR)/include -I$(Q_DIR)/include -I$(O_DIR)/include
 CFLAGS+=-I$(C_DIR)/include -I$(USERVER_DIR)/include
-CFLAGS+= -I../json-c/output/include/json-c
-CFLAGS+= -I../arbiter/include
-CFLAGS+= -D_GNU_SOURCE
-CFLAGS += -I$(GEN_DIR) -I$(SERIAL_DIR)/include
+CFLAGS+=-I../json-c/output/include/json-c
+CFLAGS+=-I../arbiter/include
+CFLAGS+=-D_GNU_SOURCE
+CFLAGS+=-I$(GEN_DIR) -I$(SERIAL_DIR)/include
+CFLAGS+=-I$(DIR)/include
 
 LIBS:=$(shell pkg-config --libs libpjproject) ../json-c/output/lib/libjson-c.a -lpthread
 
