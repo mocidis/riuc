@@ -4,6 +4,7 @@
 #include "arbiter-client.h"
 #include "oiu-client.h"
 #include "riu-server.h"
+#include "ics-proto.h"
 
 typedef struct {
     // TODO
@@ -29,6 +30,7 @@ typedef struct {
     // Stream params
     char multicast_ip[16];
     int stream_port;
+
     inbound_stream_t in_stream;
     outbound_stream_t out_stream;
 } radio_t;
@@ -67,19 +69,6 @@ static void *auto_send_to_arbiter(void * arg);
 
 //Receive msg from OIUC
 
-void extract_ip(char *connection_string, char *ip_addr) {
-    char * temp, *temp2;
-    temp = strchr(connection_string, ':');
-#if 0
-    temp2 = strchr(temp, ':');
-    strncpy(ip_addr, temp, temp2 - temp);
-#endif
-#if 1
-    temp++;
-    strncpy(ip_addr, temp, strlen(temp) + 1);
-#endif
-}
-
 static void send_abt_ptt(app_data_t *app_data, int i) {
     arbiter_request_t req;
 
@@ -99,15 +88,22 @@ static void send_abt_up(app_data_t *app_data, int i) {
     int n, len;
     req.msg_id = ABT_UP;
 
-    len = strlen(req.abt_up.username);
 
-    strncpy(req.abt_up.type, "RIU", sizeof("RIU"));
-    strncpy(req.abt_up.username, app_data->name, sizeof(app_data->name));
-    n = sprintf(req.abt_up.username + len, "%d", i);
-    req.abt_up.username[n + len] = '\0';
-    strncpy(req.abt_up.location, app_data->location, sizeof(app_data->location));
-    strncpy(req.abt_up.desc, app_data->desc, sizeof(app_data->desc));
-    extract_ip(app_data->riu_connection_string, req.abt_up.ip_addr);
+    req.abt_up.type = DT_RIUC;
+    memset(req.abt_up.id, 0, sizeof(req.abt_up.id));
+    strncpy(req.abt_up.id, app_data->name, strlen(app_data->name));
+    len = strlen(req.abt_up.id);
+    n = sprintf(req.abt_up.id + len, "%d", i);
+
+    req.abt_up.id[n + len] = '\0';
+    memset(req.abt_up.location, 0, sizeof(req.abt_up.location));
+    strncpy(req.abt_up.location, app_data->location, strlen(app_data->location));
+
+    memset(req.abt_up.desc, 0, sizeof(req.abt_up.desc));
+    strncpy(req.abt_up.desc, app_data->desc, strlen(app_data->desc));
+
+    memset(req.abt_up.conn_str, 0, sizeof(req.abt_up.conn_str));
+    strncpy(req.abt_up.conn_str, app_data->riu_connection_string, strlen(app_data->riu_connection_string));
 
     //State
     req.abt_up.is_online = app_data->radios[i].is_online;
@@ -116,25 +112,22 @@ static void send_abt_up(app_data_t *app_data, int i) {
 
     //Info   
     req.abt_up.frequence = app_data->radios[i].frequence;
-    req.abt_up.port = app_data->radios[i].port;
+    req.abt_up.radio_port = app_data->radios[i].port;
     
     //Sound info
     req.abt_up.volume = app_data->radios[i].volume;
 
     //Stream params
-    strncpy(req.abt_up.multicast_ip, app_data->radios[i].multicast_ip, sizeof(app_data->radios[i].multicast_ip));
-    req.abt_up.stream_port = app_data->radios[i].stream_port;
+    //...
 
     arbiter_send(&app_data->aclient, &req);
 }
 
 // *************** CALLBACK functions *************
 void on_riuc4_status(int port, riuc4_signal_t signal, uart4_status_t *ustatus) {
-    if (signal == RIUC_SIGNAL_SQ) {
-        app_data.radios[port].is_sq = ustatus->sq;
-        send_abt_up(&app_data, port);
-        send_abt_ptt(&app_data, port);
-    }
+    fprintf(stdout, "on_riuc4_status port:%d, signal:%d\n", port, signal);
+    app_data.radios[port].is_online = 1;
+    send_abt_up(&app_data, port);
 }
 void open_stream_from_mcast_session(char *mcast_ip, int mcast_port, int radio_port) {
     // TODO: capture stream from mcast session (mcast_ip:port) and transmit on radio interface radio_port
@@ -205,7 +198,7 @@ static void load_info_from_db(const char *db_file, app_data_t *app_data) {
     strncpy(app_data->location, "Hanoi", strlen("Hanoi"));
 
     for (i = 0; i < 4; i++) {
-        strncpy(app_data->radios[i].multicast_ip, "239.0.0.1", sizeof("239.0.0.1"));
+        strncpy(app_data->radios[i].multicast_ip, "239.0.0.1", strlen("239.0.0.1"));
         app_data->radios[i].port = 11110 + i;
     }
 }
@@ -221,23 +214,28 @@ static void init(app_data_t *app_data) {
     // INIT MANAGEMENT INFO ...
     load_info_from_db("database/riu.db", app_data);
 
-    // Init radios ...
-    for(i = 0; i < 4; i++) {
-        radio_init(&app_data->radios[i], i);
-    }
-
     // Serial RIUC4 interface for radios ...
     riuc4_init(&app_data->serial, &app_data->riuc4, &on_riuc4_status);
     riuc4_start(&app_data->serial, app_data->serial_file); // Consider when to start !!!
     
     // RIU server ...
-    strncpy(riu_cnt_string, app_data->riu_connection_string, sizeof(app_data->riu_connection_string));
+    strncpy(riu_cnt_string, app_data->riu_connection_string, strlen(app_data->riu_connection_string));
     app_data->rserver.on_request_f = &on_request;
     riu_server_init(&app_data->rserver, riu_cnt_string);
     riu_server_start(&app_data->rserver);
 
     // Arbiter client ...
     arbiter_client_open(&app_data->aclient, app_data->abt_connection_string);
+
+    // Init radios ...
+    for(i = 0; i < 4; i++) {
+        radio_init(&app_data->radios[i], i);
+        riuc4_enable_tx(&app_data->riuc4, i);
+        usleep(250*1000);
+        riuc4_enable_rx(&app_data->riuc4, i);
+        usleep(250*1000);
+    }
+
 }
 
 
@@ -255,11 +253,12 @@ int main(int argc, char *argv[]) {
 
     init(&app_data);
 
-    // Periodically send ABT_UP to arbiter 
     while (1) {
-        for (i = 0; i < 4; i++)
-            send_abt_up(&app_data, i);
-        sleep(1);   
+        usleep(1000 * 1000);
+        for (i = 0; i < 4; i++) {
+            riuc4_probe_sq(&app_data.riuc4, i);
+            usleep(250*1000) ;       
+        }
     }
 
     return 0;

@@ -38,6 +38,7 @@ CFLAGS+=-I../arbiter/include
 CFLAGS+=-D_GNU_SOURCE
 CFLAGS+=-I$(GEN_DIR) -I$(SERIAL_DIR)/include
 CFLAGS+=-I$(DIR)/include
+CFLAGS+=-I$(PROTOCOLS_DIR)/include
 
 LIBS:=$(shell pkg-config --libs libpjproject) ../json-c/output/lib/libjson-c.a -lpthread
 
